@@ -1,0 +1,13 @@
+country,apple,google,total,source
+AT,,,0,deviceatlas
+IT,27.84,71.67,99.51,deviceatlas
+ES,27.4,72.52,99.92,deviceatlas
+DE,34.08,65.17,99.25,deviceatlas
+FR,36.08,63.03,99.11,deviceatlas
+UK,50.03,49.71,99.74,deviceatlas
+AT,31.09,68.07,99.16,gs.statcounter
+IT,25.26,74.41,99.67,gs.statcounter
+ES,21.39,78.34,99.73,gs.statcounter
+DE,29.19,70.03,99.22,gs.statcounter
+FR,27.49,72.1,99.59,gs.statcounter
+UK,51.38,48.32,99.7,gs.statcounter
