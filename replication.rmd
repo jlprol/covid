@@ -75,7 +75,7 @@ mytheme <- function(base_size = 12, base_family = ""){
 The original data, both electricity consumption and temperature, were in subdaily resolution. We load here the full dataset already converted to daily values, and including also the country-specific holidays dummy. See the original script covid.R for more details on data pre-processing. 
 
 ```{r data}
-ddata<- readRDS("./data/clean/ddata.rds") %>% unique() %>% filter(date <= "2020-05-31")
+ddata<- readRDS("./data/clean/ddata.rds") %>% unique() %>% filter(date < "2020-06-30")
 ```
 
 
@@ -158,7 +158,7 @@ For each country you get (1) the residual dignostics, (2) the main regression re
 
 ```{r run regression AT}
 # run ARIMA model for Austria
-get_arima_results(where = "AT", j = 3, k = 20, p = 5, d = 1, q = 1)
+get_arima_results(where = "AT", j = 3, k = 4, p = 5, d = 1, q = 1)
 
 # import results
 atlist<- readRDS("./data/results/forecast_manual/results_AT.rds")
