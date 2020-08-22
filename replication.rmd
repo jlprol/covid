@@ -75,13 +75,13 @@ mytheme <- function(base_size = 12, base_family = ""){
 The original data, both electricity consumption and temperature, were in subdaily resolution. We load here the full dataset already converted to daily values, and including also the country-specific holidays dummy. See the original script covid.R for more details on data pre-processing. 
 
 ```{r data}
-ddata<- readRDS("./data/clean/ddata.rds") %>% unique() %>% filter(date < "2020-06-30")
+ddata<- readRDS("./data/clean/ddata2.rds") %>% unique() %>% filter(date < "2020-08-01")
 ```
 
 
 # Define the dynamic harmonic regression and forecast
 
-The function "get_arima_results()" contains the whole analysis, that can be divided in the following steps: (1) Import data for the specific country and divide it into two datasets: "train" contains all the data until February 2020 included, and "test" contains the data to produce the forecast from March 2020. (2) The datasets are converted to time series format with multiple weekly and yearly seasonality levels. (3) Box-Cox transformation. (4) Calculate Fourier terms. (5) Run the ARIMA model. (6) Calculate the fourier terms for the forecast period. (7) Estimate the forecast. (8) Save results.
+The function "get_arima_results()" contains the whole analysis, that can be divided in the following steps: (1) Filter data for the specific country and divide it into two datasets: "train" contains all the data until February 2020 included, and "test" contains the data to produce the forecast from March 2020. (2) The datasets are converted to time series format with multiple weekly and yearly seasonality levels. (3) Box-Cox transformation. (4) Calculate Fourier terms. (5) Run the ARIMA model. (6) Calculate the fourier terms for the forecast period. (7) Estimate the forecast. (8) Save results.
 
 ```{r define regression}
 get_arima_results<- function(where = "ES", k = NULL, j = 3, p = 1, d = 1, q = 1){ # if k is set no automatic selection (which takes long time)
@@ -158,7 +158,8 @@ For each country you get (1) the residual dignostics, (2) the main regression re
 
 ```{r run regression AT}
 # run ARIMA model for Austria
-get_arima_results(where = "AT", j = 3, k = 4, p = 5, d = 1, q = 1)
+get_arima_results(where = "AT", j = 3, k = 20, p = 0, d = 1, q = 4)
+
 
 # import results
 atlist<- readRDS("./data/results/forecast_manual/results_AT.rds")
@@ -170,6 +171,7 @@ coeftest(at_fit)
 
 # Plot differences
 at_result<- atlist$result %>% mutate(wday = weekdays(date))
+at_result$lockdown<- as.Date("2020-03-16")
 
 sunday<- at_result %>% mutate(wday = weekdays(date)) %>% filter(wday == "Sunday")
 atplot<- ggplot(at_result, aes(date, dif)) +
@@ -179,8 +181,10 @@ atplot<- ggplot(at_result, aes(date, dif)) +
   geom_hline(yintercept = 0, linetype = "dashed") +
   geom_vline(xintercept = as.Date("2020-03-16"), linetype = "dotted") +
   annotate("text", x = as.Date("2020-03-16"), y = -25, label = "(1)") +
+  # annotate("text", x = as.Date("2020-03-02"), y = -33, label = "-8%", color = "#21908CFF", hjust = 0) +
+  #•annotate("text", x = as.Date("2020-03-02"), y = -33, label = "2.9*", hjust = 0) +
   geom_point(data = sunday, aes(date, dif), color = "darkgrey", size = 1.5) +
-  coord_cartesian(ylim = c(-25, 15)) +
+  coord_cartesian(ylim = c(-25, 20)) +
   labs(x = element_blank(), y = element_blank(), title = "Austria") + 
   mytheme() + theme(plot.title = element_text(hjust = 0.5))
 
@@ -193,8 +197,9 @@ atplot2<- ggplot(at_result, aes(date, fct)) +
   geom_ribbon(aes(date, ymin = low95, ymax = up95), alpha = .08) +
   geom_line(aes(date, actual),  color = viridis_col[7], size = 1) +
   geom_vline(xintercept = as.Date("2020-03-16"), linetype = "dotted") +
-  annotate("text", x = as.Date("2020-03-16"), y = .9, label = "(1)") +
+  annotate("text", x = as.Date("2020-03-16"), y = .4, label = "(1)") +
   labs(x = element_blank(), y = element_blank(), title = "Austria") +
+  coord_cartesian(ylim= c(.4, .8)) +
   mytheme() + theme(plot.title = element_text(hjust = 0.5))
 
 write.png(atplot2, "./figures/at2.png")
@@ -214,18 +219,19 @@ checkresiduals(ca_fit)
 coeftest(ca_fit)
 
 ca_result<- calist$result
+ca_result$lockdown<- as.Date("2020-03-19")
 
 sunday<- ca_result %>% mutate(wday = weekdays(date)) %>% filter(wday == "Sunday")
 caplot<- ggplot(ca_result, aes(date, dif)) +
-  geom_ribbon(aes(date, ymin = diflow80, ymax = difup80), fill = viridis_col[8], alpha = .2) +
-  geom_ribbon(aes(date, ymin = diflow95, ymax = difup95), fill = viridis_col[8], alpha = .15) +
-  geom_line(color = viridis_col[8]) + geom_point(color = viridis_col[8]) +
+  geom_ribbon(aes(date, ymin = diflow80, ymax = difup80), fill = viridis_col[6], alpha = .2) +
+  geom_ribbon(aes(date, ymin = diflow95, ymax = difup95), fill = viridis_col[6], alpha = .15) +
+  geom_line(color = viridis_col[6]) + geom_point(color = viridis_col[6]) +
   geom_hline(yintercept = 0, linetype = "dashed") +
   geom_vline(xintercept = as.Date("2020-03-19"), linetype = "dotted") +
-  annotate("text", x = as.Date("2020-03-19"), y = -25, label = "(1)") +
+  annotate("text", x = as.Date("2020-03-19"), y = -35, label = "(1)") +
   #annotate("text", x = as.Date("2020-03-02"), y = -23, label = "1.8*", hjust = 0) +
   geom_point(data = sunday, aes(date, dif), color = "darkgrey", size = 1.5) +
-  coord_cartesian(ylim = c(-25, 15)) +
+  coord_cartesian(ylim = c(-35, 10)) +
   labs(x = element_blank(), y = element_blank(), title = "California") + 
   mytheme() + theme(plot.title = element_text(hjust = 0.5))
 
@@ -235,7 +241,7 @@ caplot2<- ggplot(ca_result, aes(date, fct)) +
   geom_line(size = .5) +
   geom_ribbon(aes(date, ymin = low80, ymax = up80), alpha = .12) +
   geom_ribbon(aes(date, ymin = low95, ymax = up95), alpha = .08) +
-  geom_line(aes(date, actual),  color = viridis_col[8], size = 1) +
+  geom_line(aes(date, actual),  color = viridis_col[6], size = 1) +
   geom_vline(xintercept = as.Date("2020-03-19"), linetype = "dotted") +
   annotate("text", x = as.Date("2020-03-19"), y = .5, label = "(1)") +
   labs(x = element_blank(), y = element_blank(), title = "California") +
@@ -249,17 +255,18 @@ write.png(caplot2, "./figures/ca2.png")
 get_arima_results(where = "DE", j = 3, k = 11, p = 4, d = 1, q = 1) # get_results2(where = "DE")
 delist<- readRDS("./data/results/forecast_manual/results_DE.rds")
 
-
 de_fit<- delist$fit
 checkresiduals(de_fit)
 coeftest(de_fit)
 
 de_result<- delist$result
+de_result$lockdown<- as.Date("2020-03-22")
+
 sunday<- de_result %>% mutate(wday = weekdays(date)) %>% filter(wday == "Sunday")
 deplot<- ggplot(de_result, aes(date, dif)) +
-  geom_ribbon(aes(date, ymin = diflow80, ymax = difup80), fill = viridis_col[6], alpha = .25) +
-  geom_ribbon(aes(date, ymin = diflow95, ymax = difup95), fill = viridis_col[6], alpha = .2) +
-  geom_line(color =viridis_col[6]) + geom_point(color = viridis_col[6]) +
+  geom_ribbon(aes(date, ymin = diflow80, ymax = difup80), fill = viridis_col[5], alpha = .2) +
+  geom_ribbon(aes(date, ymin = diflow95, ymax = difup95), fill = viridis_col[5], alpha = .15) +
+  geom_line(color =viridis_col[5]) + geom_point(color = viridis_col[5]) +
   geom_hline(yintercept = 0, linetype = "dashed") +
   geom_vline(xintercept = as.Date("2020-03-22"), linetype = "dotted") +
   annotate("text", x = as.Date("2020-03-22"), y = -35, label = "(1)") +
@@ -275,16 +282,16 @@ deplot2<- ggplot(de_result, aes(date, fct)) +
   geom_line(size = .5) +
   geom_ribbon(aes(date, ymin = low80, ymax = up80), alpha = .12) +
   geom_ribbon(aes(date, ymin = low95, ymax = up95), alpha = .08) +
-  geom_line(aes(date, actual),  color = viridis_col[6], size = 1) +
+  geom_line(aes(date, actual),  color = viridis_col[5], size = 1) +
   geom_vline(xintercept = as.Date("2020-03-22"), linetype = "dotted") +
-  annotate("text", x = as.Date("2020-03-22"), y = 3, label = "(1)") +
+  annotate("text", x = as.Date("2020-03-22"), y = 3.6, label = "(1)") +
   labs(x = element_blank(), y = element_blank(), title = "Germany") +
   mytheme() + theme(plot.title = element_text(hjust = 0.5))
 
 write.png(deplot2, "./figures/de2.png")
 
 ############# 4.4 ES ############
-get_arima_results(where = "ES", j=3, k = 23, p = 3, d = 1, q = 2) # get_results2(where = "ES") 
+get_arima_results(where = "ES", j=3, k = 23, p = 3, d = 1, q = 2)
 eslist<- readRDS("./data/results/forecast_manual/results_ES.rds")
 
 es_fit<- eslist$fit
@@ -292,11 +299,13 @@ checkresiduals(es_fit)
 coeftest(es_fit)
 
 es_result<- eslist$result
+es_result$lockdown<- as.Date("2020-03-15")
+
 
 sunday<- es_result %>% mutate(wday = weekdays(date)) %>% filter(wday == "Sunday")
 esplot<- ggplot(es_result, aes(date, dif)) +
-  geom_ribbon(aes(date, ymin = diflow80, ymax = difup80), fill = viridis_col[4], alpha = .1) +
-  geom_ribbon(aes(date, ymin = diflow95, ymax = difup95), fill = viridis_col[4], alpha = .05) +
+  geom_ribbon(aes(date, ymin = diflow80, ymax = difup80), fill = viridis_col[4], alpha = .2) +
+  geom_ribbon(aes(date, ymin = diflow95, ymax = difup95), fill = viridis_col[4], alpha = .15) +
   geom_line(color = viridis_col[4]) + geom_point(color = viridis_col[4]) +
   geom_hline(yintercept = 0, linetype = "dashed") +
   geom_vline(xintercept = as.Date("2020-03-15"), linetype = "dotted") +
@@ -321,9 +330,9 @@ esplot2<- ggplot(es_result, aes(date, fct)) +
   geom_vline(xintercept = as.Date("2020-03-15"), linetype = "dotted") +
   geom_vline(xintercept = as.Date("2020-03-30"), linetype = "dotted") +
   geom_vline(xintercept = as.Date("2020-04-14"), linetype = "dotted") +
-  annotate("text", x = as.Date("2020-03-15"), y = 1.33, label = "(1)") +
-  annotate("text", x = as.Date("2020-03-30"), y = 1.33, label = "(2)") +
-  annotate("text", x = as.Date("2020-04-14"), y = 1.33, label = "(3)") +
+  annotate("text", x = as.Date("2020-03-15"), y = .45, label = "(1)") +
+  annotate("text", x = as.Date("2020-03-30"), y = .45, label = "(2)") +
+  annotate("text", x = as.Date("2020-04-14"), y = .45, label = "(3)") +
   labs(x = element_blank(), y = element_blank(), title = "Spain") +
   mytheme() + theme(plot.title = element_text(hjust = 0.5))
 
@@ -334,12 +343,13 @@ write.png(esplot2, "./figures/es2.png")
 get_arima_results(where = "FL", j = 3, k = 3, p = 1, d = 1, q = 2) # get_results2(where = "FL") 
 fllist<- readRDS("./data/results/forecast_manual/results_FL.rds")
 
-
 fl_fit<- fllist$fit
 checkresiduals(fl_fit)
 coeftest(fl_fit)
 
 fl_result<- fllist$result
+fl_result$lockdown<- as.Date("2020-04-03")
+
 sunday<- fl_result %>% mutate(wday = weekdays(date)) %>% filter(wday == "Sunday")
 flplot<- ggplot(fl_result, aes(date, dif)) +
   geom_ribbon(aes(date, ymin = diflow80, ymax = difup80), fill = viridis_col[9], alpha = .25) +
@@ -350,7 +360,7 @@ flplot<- ggplot(fl_result, aes(date, dif)) +
   annotate("text", x = as.Date("2020-04-03"), y = -25, label = "(1)") +
   #annotate("text", x = as.Date("2020-03-02"), y = -23, label = "2.71*", hjust = 0) +
   geom_point(data = sunday, aes(date, dif), color = "darkgrey", size = 1.5) +
-  coord_cartesian(ylim = c(-25, 15)) +
+  coord_cartesian(ylim = c(-25, 20)) +
   labs(x = element_blank(), y = element_blank(), title = "Florida") + 
   mytheme()+ theme(plot.title = element_text(hjust = 0.5))
 
@@ -378,12 +388,13 @@ checkresiduals(fr_fit)
 coeftest(fr_fit)
 
 fr_result<- frlist$result
+fr_result$lockdown<- as.Date("2020-03-17")
 
 sunday<- fr_result %>% mutate(wday = weekdays(date)) %>% filter(wday == "Sunday")
 frplot<- ggplot(fr_result, aes(date, dif)) +
-  geom_ribbon(aes(date, ymin = diflow80, ymax = difup80), fill = viridis_col[2], alpha = .1) +
-  geom_ribbon(aes(date, ymin = diflow95, ymax = difup95), fill = viridis_col[2], alpha = .05) +
-  geom_line(color = viridis_col[2]) + geom_point(color = viridis_col[2]) +
+  geom_ribbon(aes(date, ymin = diflow80, ymax = difup80), fill = viridis_col[3], alpha = .2) +
+  geom_ribbon(aes(date, ymin = diflow95, ymax = difup95), fill = viridis_col[3], alpha = .15) +
+  geom_line(color = viridis_col[3]) + geom_point(color = viridis_col[3]) +
   geom_hline(yintercept = 0, linetype = "dashed") +
   geom_vline(xintercept = as.Date("2020-03-17"), linetype = "dotted") +
   annotate("text", x = as.Date("2020-03-17"), y = -45, label = "(1)") +
@@ -399,17 +410,17 @@ frplot2<- ggplot(fr_result, aes(date, fct)) +
   geom_line(size = .5) +
   geom_ribbon(aes(date, ymin = low80, ymax = up80), alpha = .12) +
   geom_ribbon(aes(date, ymin = low95, ymax = up95), alpha = .08) +
-  geom_line(aes(date, actual),  color = viridis_col[2], size = 1) +
+  geom_line(aes(date, actual),  color = viridis_col[3], size = 1) +
   geom_vline(xintercept = as.Date("2020-03-17"), linetype = "dotted") +
   labs(x = element_blank(), y = element_blank(), title = "France") +
-  annotate("text", x = as.Date("2020-03-17"), y = 2.5, label = "(1)") +
+  annotate("text", x = as.Date("2020-03-17"), y = .9, label = "(1)") +
   mytheme() + theme(plot.title = element_text(hjust = 0.5))
 
 write.png(frplot2, "./figures/fr2.png")
 
 
 ############# 4.7 GB ############
-get_arima_results(where = "GB",j = 3, k = 19, p = 2, d = 1, q = 3) # get_results2(where = "UK")
+get_arima_results(where = "GB",j = 3, k = 3, p = 2, d = 1, q = 1) # get_results2(where = "UK")
 gblist<- readRDS("./data/results/forecast_manual/results_GB.rds")
 
 gb_fit<- gblist$fit
@@ -417,12 +428,13 @@ checkresiduals(gb_fit)
 coeftest(gb_fit)
 
 gb_result<- gblist$result
+gb_result$lockdown<- as.Date("2020-03-23")
 
 sunday<- gb_result %>% mutate(wday = weekdays(date)) %>% filter(wday == "Sunday")
 gbplot<- ggplot(gb_result, aes(date, dif)) +
-  geom_ribbon(aes(date, ymin = diflow80, ymax = difup80), fill = viridis_col[3], alpha = .1) +
-  geom_ribbon(aes(date, ymin = diflow95, ymax = difup95), fill = viridis_col[3], alpha = .05) +
-  geom_line(color = viridis_col[3]) + geom_point(color = viridis_col[3]) +
+  geom_ribbon(aes(date, ymin = diflow80, ymax = difup80), fill = viridis_col[1], alpha = .2) +
+  geom_ribbon(aes(date, ymin = diflow95, ymax = difup95), fill = viridis_col[1], alpha = .15) +
+  geom_line(color = viridis_col[1]) + geom_point(color = viridis_col[1]) +
   geom_hline(yintercept = 0, linetype = "dashed") +
   geom_vline(xintercept = as.Date("2020-03-23"), linetype = "dotted") +
   annotate("text", x = as.Date("2020-03-23"), y = -45, label = "(1)") +
@@ -438,16 +450,16 @@ gbplot2<- ggplot(gb_result, aes(date, fct)) +
   geom_line(size = .5) +
   geom_ribbon(aes(date, ymin = low80, ymax = up80), alpha = .12) +
   geom_ribbon(aes(date, ymin = low95, ymax = up95), alpha = .08) +
-  geom_line(aes(date, actual),  color = viridis_col[3], size = 1) +
+  geom_line(aes(date, actual),  color = viridis_col[1], size = 1) +
   geom_vline(xintercept = as.Date("2020-03-23"), linetype = "dotted") +
   labs(x = element_blank(), y = element_blank(), title = "Great Britain") +
-  annotate("text", x = as.Date("2020-03-23"), y = 2, label = "(1)") +
+  annotate("text", x = as.Date("2020-03-23"), y = 1.1, label = "(1)") +
   mytheme() + theme(plot.title = element_text(hjust = 0.5))
 
 write.png(gbplot2, "./figures/gb2.png")
 
 ############# 4.8 IT ############
-get_arima_results(where = "IT", j = 3, k = 21, p = 2, d = 1, q = 1) 
+get_arima_results(where = "IT", j = 3, k = 20, p = 3, d = 1, q = 1) 
 itlist<- readRDS("./data/results/forecast_manual/results_IT.rds")
 
 it_fit<- itlist$fit
@@ -455,12 +467,13 @@ checkresiduals(it_fit)
 coeftest(it_fit)
 
 it_result<- itlist$result
+it_result$lockdown<-  as.Date("2020-03-10")
 
 sunday<- it_result %>% mutate(wday = weekdays(date)) %>% filter(wday == "Sunday")
 itplot<- ggplot(it_result, aes(date, dif)) +
-  geom_ribbon(aes(date, ymin = diflow80, ymax = difup80), alpha = .1, fill = viridis_col[1]) +
-  geom_ribbon(aes(date, ymin = diflow95, ymax = difup95), alpha = .05, fill = viridis_col[1]) +
-  geom_line(color = viridis_col[1]) + geom_point(color = viridis_col[1]) +
+  geom_ribbon(aes(date, ymin = diflow80, ymax = difup80), alpha = .1, fill = viridis_col[2]) +
+  geom_ribbon(aes(date, ymin = diflow95, ymax = difup95), alpha = .05, fill = viridis_col[2]) +
+  geom_line(color = viridis_col[2]) + geom_point(color = viridis_col[2]) +
   geom_hline(yintercept = 0, linetype = "dashed") +
   geom_vline(xintercept = as.Date("2020-03-10"), linetype = "dotted") +
   geom_vline(xintercept = as.Date("2020-03-21"), linetype = "dotted") +
@@ -483,13 +496,13 @@ itplot2<- ggplot(it_result, aes(date, fct)) +
   geom_line(size = .5) +
   geom_ribbon(aes(date, ymin = low80, ymax = up80), alpha = .12) +
   geom_ribbon(aes(date, ymin = low95, ymax = up95), alpha = .08) +
-  geom_line(aes(date, actual),  color = viridis_col[1], size = 1) +
+  geom_line(aes(date, actual),  color = viridis_col[2], size = 1) +
   geom_vline(xintercept = as.Date("2020-03-10"), linetype = "dotted") +
   geom_vline(xintercept = as.Date("2020-03-21"), linetype = "dotted") +
   geom_vline(xintercept = as.Date("2020-04-14"), linetype = "dotted") +
-  annotate("text", x = as.Date("2020-03-10"), y = .85, label = "(1)") +
-  annotate("text", x = as.Date("2020-03-21"), y = .85,label = "(2)") +
-  annotate("text", x = as.Date("2020-04-14"), y = .85, label = "(3)") +
+  annotate("text", x = as.Date("2020-03-10"), y = .41, label = "(1)") +
+  annotate("text", x = as.Date("2020-03-21"), y = .41,label = "(2)") +
+  annotate("text", x = as.Date("2020-04-14"), y = .41, label = "(3)") +
   labs(x = element_blank(), y = element_blank(), title = "Italy") +
   mytheme() + theme(plot.title = element_text(hjust = 0.5))
 
@@ -505,18 +518,19 @@ checkresiduals(ny_fit)
 coeftest(ny_fit)
 
 ny_result<- nylist$result
+ny_result$lockdown<- as.Date("2020-03-22")
 
 sunday<- ny_result %>% mutate(wday = weekdays(date)) %>% filter(wday == "Sunday")
 nyplot<- ggplot(ny_result, aes(date, dif)) +
-  geom_ribbon(aes(date, ymin = diflow80, ymax = difup80), fill = viridis_col[5], alpha = .25) +
-  geom_ribbon(aes(date, ymin = diflow95, ymax = difup95), fill = viridis_col[5], alpha = .2) +
-  geom_line(color = viridis_col[5]) + geom_point(color = viridis_col[5]) +
+  geom_ribbon(aes(date, ymin = diflow80, ymax = difup80), fill = viridis_col[8], alpha = .25) +
+  geom_ribbon(aes(date, ymin = diflow95, ymax = difup95), fill = viridis_col[8], alpha = .2) +
+  geom_line(color = viridis_col[8]) + geom_point(color = viridis_col[8]) +
   geom_hline(yintercept = 0, linetype = "dashed") +
   geom_vline(xintercept = as.Date("2020-03-22"), linetype = "dotted") +
-  annotate("text", x = as.Date("2020-03-22"), y = -35, label = "(1)") +
+  annotate("text", x = as.Date("2020-03-22"), y = -25, label = "(1)") +
   #annotate("text", x = as.Date("2020-03-02"), y = -32, label = "1.63*", hjust = 0) +
   geom_point(data = sunday, aes(date, dif), color = "darkgrey", size = 1.5) +
-  coord_cartesian(ylim = c(-35, 10)) +
+  coord_cartesian(ylim = c(-25, 20)) +
   labs(x = element_blank(), y = element_blank(), title = "New York") + 
   mytheme() + theme(plot.title = element_text(hjust = 0.5))
 
@@ -526,9 +540,9 @@ nyplot2<- ggplot(ny_result, aes(date, fct)) +
   geom_line(size = .5) +
   geom_ribbon(aes(date, ymin = low80, ymax = up80), alpha = .12) +
   geom_ribbon(aes(date, ymin = low95, ymax = up95), alpha = .08) +
-  geom_line(aes(date, actual),  color = viridis_col[5], size = 1) +
+  geom_line(aes(date, actual),  color = viridis_col[8], size = 1) +
   geom_vline(xintercept = as.Date("2020-03-22"), linetype = "dotted") +
-  labs(x = element_blank(), y = "Daily consumption (GWh)", title = "New York") +
+  labs(x = element_blank(), y = element_blank(), title = "New York") +
   annotate("text", x = as.Date("2020-03-22"), y = .31, label = "(1)") +
   mytheme() + theme(plot.title = element_text(hjust = 0.5))
 
@@ -569,8 +583,8 @@ cumplot<- ggplot(cum_results, aes(t, index_pc, color = fct_reorder(country, inde
   geom_line(size = 1, alpha = 1.5) + 
   geom_point(data = legend, aes(x = t, y = index_pc)) +
   geom_hline(yintercept = 0, linetype = "dashed") +
-  geom_text_repel(data = legend, aes(x = t, y = index_pc, label = country,
-                               color = country, hjust = .5, vjust = -.1), fontface = "bold") +
+  geom_text_repel(data = legend, aes(x = t, y = index_pc, label = country),
+            nudge_x = 5, size = 4, fontface = "bold") +
   scale_color_viridis_d() +
   scale_y_continuous(sec.axis = sec_axis(~ .)) +
   labs(x = "Days from lockdown", y = "Cumulative consumption change (%)") +
@@ -585,8 +599,8 @@ write.png(cumplot, "./figures/cumulative.png")
 Finally, the relationship between measures stringency and electricity consumption decline is calculated as follows:
 
 ```{r Stringency}
-# import and clean stringency index data
-stringency<- read.csv("./data/raw/stringency/OxCGRT_latest.csv") %>%
+# import and clean country- and state-level stringency data
+stringencyEU<- read.csv("./data/raw/stringency/OxCGRT_latest.csv") %>%
   select(country = CountryName, date = Date, school = C1_School.closing, school_general = C1_Flag,
          workplace = C2_Workplace.closing, workplace_general = C2_Flag,
          events = C3_Cancel.public.events, events_general = C3_Flag,
@@ -609,10 +623,40 @@ stringency<- read.csv("./data/raw/stringency/OxCGRT_latest.csv") %>%
   select(country, date, school, workplace, events, transport, movement, travel, index) %>%
   arrange(country, date) %>% as_tibble()
 
-# change names
-stringency$country<- plyr::mapvalues(stringency$country,
-               from = c("Germany", "Spain", "Italy", "France", "Austria", "United Kingdom"),
-               to = c("DE", "ES", "IT", "FR", "AT", "GB"))
+stringencyEU$country<- plyr::mapvalues(stringencyEU$country,
+              from = c("Germany", "Spain", "Italy", "France", "Austria", "United Kingdom"),
+              to = c("DE", "ES", "IT", "FR", "AT", "GB"))
+
+
+stringencyUS<- read.csv("./data/raw/stringency/OxCGRT_US_states_temp.csv") %>%
+  select(country = RegionName, date = Date, school = C1_School.closing, school_general = C1_Flag,
+         workplace = C2_Workplace.closing, workplace_general = C2_Flag,
+         events = C3_Cancel.public.events, events_general = C3_Flag,
+         transport = C5_Close.public.transport, transport_general = C5_Flag,
+         stayhome = C6_Stay.at.home.requirements, stayhome_general = C6_Flag,
+         movement = C7_Restrictions.on.internal.movement, movement_general = C7_Flag,
+         travel = C8_International.travel.controls,
+         index = StringencyIndex) %>%
+  filter(country %in% c("California", "New York", "Florida")) %>%
+  droplevels() %>%
+  mutate(country = as.factor(country),
+         date = ymd(date),
+         school = as.factor(replace_na(ifelse(school_general == 1 & school == 3, 1, 0), 0)),
+         workplace = as.factor(replace_na(ifelse(workplace_general == 1 & workplace == 3, 1, 0), 0)),
+         events = as.factor(replace_na(ifelse(events_general == 1 & events == 2, 1, 0), 0)),
+         transport = as.factor(replace_na(ifelse(transport_general == 1 & transport == 2, 1, 0), 0)),
+         stayhome = as.factor(replace_na(ifelse(transport_general == 1 & stayhome == 3, 1, 0), 0)),
+         movement = as.factor(replace_na(ifelse(movement_general == 1 & movement == 2, 1, 0), 0)),
+         travel = as.factor(replace_na(ifelse(travel == 4, 1, 0), 0))) %>%
+  select(country, date, school, workplace, events, transport, movement, travel, index) %>%
+  arrange(country, date) %>% as_tibble()
+
+stringencyUS$country<- plyr::mapvalues(stringencyUS$country,
+              from = c("California", "Florida", "New York"),
+              to = c("CA", "FL", "NY"))
+
+stringency<- bind_rows(stringencyEU, stringencyUS)
+
 
 # import consumption data
 dif_results<- readRDS("./data/results/dif_results.rds") %>%
@@ -626,17 +670,18 @@ str_data<- right_join(dif_results, stringency, by = c("country", "date")) %>%
 medpoint<- str_data %>% group_by(country) %>%
   summarise(dif = median(dif), index = median(index))
 
-# create colors vector
-#                      AT              DE              ES              FR              GB            IT
-mycolors = c(viridis_col[7], viridis_col[6],viridis_col[4], viridis_col[2], viridis_col[3], viridis_col[1])
+# color palette
+# order: AT, CA, DE, ES, FL, \newline FR, GB, IT, NY
+mycolors = c(viridis_col[7], viridis_col[6],viridis_col[5], viridis_col[4], viridis_col[9],
+             viridis_col[3], viridis_col[1], viridis_col[2], viridis_col[8])
 
-# stringency index vs. electricity consumption plot
+# plot
 strindexplot<- ggplot(str_data, aes(index, dif)) +
-  geom_point(aes(color = country), alpha = .2) +
+  geom_point(aes(color = country), alpha = .15) +
   geom_hline(yintercept = 0, color = "black", linetype = "dashed") +
-  geom_smooth(span = 1, se = F, color = "darkgrey", size = 1.5) +
-  geom_text(data = medpoint, aes(x = index, y = dif, color = country, label = country), 
-            fontface = "bold", size = 4.5) +
+  geom_smooth(method = loess, se = F, color = "black", size = 1) +
+  geom_text_repel(data = medpoint, aes(x = index, y = dif, color = country, label = country), 
+            fontface = "bold", size = 4.5, force = .01) +
   scale_color_manual(values = mycolors) +
   scale_y_continuous(sec.axis = sec_axis(~ .)) +
   labs(x = "Stringency index", y = "Decrease daily consumption (%)") +
