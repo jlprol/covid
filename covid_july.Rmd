@@ -1,0 +1,257 @@
+---
+title: "Impact of COVID-19 measures on electricity consumption"
+header-includes:
+  - \usepackage{dcolumn}
+  - \usepackage{pdfpages}
+  - \usepackage{amsmath}
+  - \usepackage{float}
+  - \usepackage{lscape}
+  - \newcommand{\blandscape}{\begin{landscape}}
+  - \newcommand{\elandscape}{\end{landscape}}
+  - \newcommand{\bcenter}{\begin{center}}
+  - \newcommand{\ecenter}{\end{center}}
+  - \usepackage{setspace}
+  - \onehalfspacing
+  - \usepackage{lineno}
+  - \linenumbers
+
+output:
+  pdf_document:
+    fig_caption: yes
+    number_sections: no
+    keep_tex: true
+    citation_package: biblatex
+bibliography: covid.bib
+biblio-style: nature
+csl: nature.csl
+link-citations: true
+documentclass: article
+classoption: a4paper
+
+---
+
+```{r set up, include=FALSE}
+
+knitr::opts_chunk$set(fig.path = 'figures/',
+                      echo = FALSE, warning = FALSE, message = FALSE)
+
+library(ggplot2)
+library(gridExtra)
+library(stargazer)
+library(zoo)
+library(tseries)
+library(dplyr)
+library(tiff)
+library(grid)
+library(knitr)
+
+
+mytheme <- function(base_size = 12, base_family = ""){
+  theme_bw(base_size = base_size, base_family = base_family) %+replace%
+    theme(
+      panel.border     = element_blank(),
+      axis.line        = element_blank(),
+      axis.ticks = element_line(color = "grey"),
+      panel.grid.major = element_line(),
+      panel.grid.major.x = element_line(colour = "grey", size = 0.1, linetype = "dotted"),
+      panel.grid.major.y = element_line(colour = "grey", size = 0.1, linetype = "dotted"),
+      panel.grid.minor = element_line(),
+      panel.grid.minor.x = element_line(colour = "grey", size = 0.1, linetype = "dotted"),
+      panel.grid.minor.y = element_line(colour = "grey", size = 0.1, linetype = "dotted"),
+      strip.background = element_blank(),
+      legend.key       = element_blank()
+    )
+}
+```
+
+
+\begin{center}
+Javier López Prol\textsuperscript{1}* and Sungmin O\textsuperscript{2}
+
+\textsuperscript{1}Erwin Schrödinger fellow at the German Institute for Economic Research (DIW Berlin) and Wegener Center for Climate and Global Change - University of Graz. \ \textsuperscript{2}Max Planck Institute for Biogeochemistry
+\end{center}
+
+\vspace{5 mm} 
+
+*Corresponding author: javier.lopez-prol\@uni-graz.at
+
+
+# Abstract
+
+As COVID-19 spreads worldwide, governments have been implementing a wide range of measures to contain it, from movement restrictions to economy-wide shutdowns. Understanding their impacts is essential to support better policies for countries still experiencing outbreaks or in case of emergence of second pandemic waves. Here we show that the cumulative decline in electricity consumption within the five months following the stay-home orders ranges between 3-12% in the most affected EU countries and USA states, except Florida that shows no significant impact. Whereas Italy, France, Spain, California, Austria and New York have recovered baseline levels by the end of July, Great Britain and Germany remain below baseline levels. These results illustrate the severity of the crisis across countries and can support further research on the effect of specific measures, the evolution of economic activity or the relationship with other high-frequency indicators.
+
+
+
+
+\pagenumbering{gobble}
+
+
+\newpage
+
+\pagenumbering{arabic} 
+
+
+# Introduction
+
+
+From social distancing guidelines to strict lockdowns and paralysation of non-essential economic activity, governments worldwide have taken a wide range of measures to halt the spread of the COVID-19 pandemic [@Oxford2020]. Global $CO_2$ emissions decreased by 17% during forced confinements [@LeQuere2020] and global GDP is expected to decline by 3% in 2020 as a result of the pandemic [@IMF2020outlook]. The economic contraction in advanced countries will double the world average, and it could be as high as 9% in the most affected countries, such as Italy. As an illustration, the strongest impact of the 2003 SARS coronavirus epidemic was in China and Hong Kong with GDP losses of 1.1% and 2.6%, respectively, and a global GDP decline of less than 0.1% [@Lee2004]. Given the unprecedented nature of this crisis, governments are uncertain about the economic impacts of the implemented measures [@IMF2020G20]. The unfolding outbreaks in other countries [@WHO2020] beyond the ones studied here and the potential emergence of second pandemic waves [@WHO2020b] reveal the urgency to improve our knowledge about the potential impacts of the containment measures.
+
+Given the relationship between electricity consumption and GDP [@Hirsh2015] and the real-time availability of electricity consumption data,  analysing the evolution of electricity consumption may serve as an early warning indicator to assess the impact of containment measures on overall economic activity. Early attempts to track the evolution of electricity consumption during the pandemic have been made by the Bruegel institute [@Bruegel2020], that provides information on temperature-adjusted peak-hour electricity consumption in European countries compared to last year. Working papers have also assessed early impacts in the USA [@Agdas2020] and Europe [@Cicala2020]. The International Energy Agency provides a broader analysis of the impact of COVID-19 on the energy sector [@IEA2020], and Gillingham et al. [-@Gillingham2020] estimate the short- and long-term impacts on energy and the environment in the USA. Several media outlets have also provided information on the fall of electricity consumption in different countries compared to previous years' weekly or monthly averages [@Morison2020; @Bui2020].
+
+However, given that electricity consumption is determined by many factors such as temperature, trends, seasonal cycles, calendar effects and short-term dynamics [@Fan2012], ignoring such factors will likely bias the results. Additionally, the resulting data and a reproducible method should be publicly available to support further research. For these reasons, we forecast baseline daily electricity consumption in a counterfactual "business as usual" scenario in which COVID-19 did not take place and then compare the forecast with actual electricity consumption in the nine most impacted European countries and USA states. We estimate daily electricity consumption with country-specific dynamic harmonic regressions with Fourier terms for complex seasonality, quadratic temperature and calendar effects [@Hyndman2018]. This allows us to build a reliable counterfactual baseline scenario with test accuracy ranging between 2.7--4.3% mean average percentage error, which is within the range of the one-day ahead forecast accuracy benchmark set in the literature [@Jun2011]. We have evaluated the most widely used time series forecast methods and opted for the dynamic harmonic regression as it provides the best accuracy results and lowest spread across countries (see Methods section and Supplementary Information for more details).
+
+We contribute to the literature by providing a reliable counterfactual baseline electricity consumption against which to compare actual data. Data and code are available so the estimation can be extended to other countries/states and support further research on the effect of specific measures, the evolution of economic activity or the relationship with other high-frequency indicators. We analyse the decline in electricity consumption in the most affected European countries and US states and link it with the stringency of the measures taken to contain the pandemic. We find that all the studied countries/states, except Great Britain and Germany, have recovered baseline electricity consumption by the end of July 2020, and that the relationship between the stringency of the containment measures and the decline in electricity consumption is non-linear. That could entail that moderate measures may have only a small effect on electricity consumption and thus economic activity.
+
+# Results
+
+
+## Electricity consumption decline
+
+Figure 1 shows the cumulative change in electricity consumption since the lockdown/stay-home order in each country/state until the end of July 2020. The severity of both the outbreaks and the lockdown and complementary measures taken by governments to halt the COVID-19 spread differ widely across countries, and therefore the electricity consumption evolution also varies. Most of the studied countries have experienced a negative cumulative impact of between ~3--12% within the five months following the start of the crisis, except Florida that has not suffered a significant negative impact with respect to the baseline scenario. 
+
+\bcenter
+
+![](./figures/cumulative.png){ width=80% }
+
+
+__Figure 1. Impact curve flattens in most countries in about a month after the start of the lockdown/stay-home orders.__  Lines represent the cumulative change in electricity consumption compared to the forecast baseline levels. See https://jlprol.shinyapps.io/covid/ for an interactive version of this figure and easy data download.
+
+\ecenter
+
+
+Figure 2 provides greater detail for each particular country/state, presenting the daily percentage change in electricity consumption compared to the expected counterfactual baseline (see Supplementary Figure 4 for the actual and forecast electricity consumption in absolute terms). Countries are sorted and coloured (darker to lighter) according to the cumulative impact during the study period as shown in Fig. 1. The dates of the national/state-wide lockdowns/stay-home orders are indicated on each of the panels by vertical dotted lines. Additionally, for Italy and Spain where there was a shutdown of non-essential economic activity, subsequent vertical dotted lines indicate the date of the beginning of the shutdown and the progressive reopening of economic activity.
+
+
+The stringency and scope of these measures differ widely across countries. For instance, Italy issued the first lockdown affecting 50.000 people already on February 21. It was extended to Lombardy and other 14 northern provinces on March 8 and finally to the whole country from March 10. Likewise, measures were implemented at different times and scales in the different German federal states. Other countries, such as France and Spain, implemented the lockdown homogeneously across the country. 
+
+
+Italy and Spain are particularly interesting as three phases are clearly identifiable: (i) a first lockdown phase, (ii) a second phase of non-essential economic activity shutdown, and (iii) a subsequent progressive re-opening of economic activities. During the non-essential economic activity shutdown, daily electricity consumption declined on average 29% daily in Italy and 21% in Spain compared to the baseline. Electricity consumption started recovering in Italy and Spain with the progressive re-opening of economic activities, and reached baseline levels by the end of July.
+
+
+Great Britain experienced the strongest cumulative decline in electricity consumption of 11.4%. Whereas the initial impact was not as strong as in other countries such as Italy or France, electricity consumption in Great Britain has consistently remained below baseline levels and shows no sign of recoverly. Coversely, France experienced an instant 20% decline with the beginning of the lockdown, but has already recovered baseline electricity consumption. The European countries that experienced a stronger decline in the first weeks (Italy, France and Spain) have recovered faster than those with lower initial declines (Germany and Great Britain). These results could suggest that stronger initial action reduces the duration of the shock. Austria lies between these two types of impacts, with an initial impact of -10% that recovers in two months, followed by a slight relapse in June that recovers again in July.
+
+```{r, Fig.2}
+grid.raster(readTIFF("./figures/combined.tiff"))
+```
+
+\bcenter
+
+__Figure 2. Different containment measures across countries led to different impacts on electricity consumption__. Solid lines show the daily percentage change in electricity consumption. Dark and light shades indicate 80% and 95% prediction intervals, respectively. Sundays are coloured grey. Vertical dotted lines indicate the start of (1) lockdown/stay-home orders, (2) non-essential economic activity shutdown, and (3) progressively resuming non-essential economic activity. Note that vertical axis ranges are different for each row. See Methods for details and Supplementary Fig. 4 for absolute values. See https://jlprol.shinyapps.io/covid/ for an interactive version of this figure and easy data download.
+
+\ecenter
+
+
+Generally, the impact of COVID-19 measures on electricity consumption has been lower and the recovery faster in the studied USA states than in the European countries. Variability in the estimates is also higher in the USA states, perhaps due to the presence of confounding factors such as the black lifes matters protests at end of May--beginning of June. Florida did not even experience a net negative impact.
+
+
+
+## Measures stringency
+
+The depth of the consumption decline is directly related to the stringency of the containment measures. The stringency index [@Oxford2020; @Hale2020] is composed of nine policy response indicators: (1) School closing, (2) Workplace closing, (3) Cancel public events, (4) Restrictions on gathering size, (5) Close public transport, (6) Stay at home requirements, (7) Restrictions on internal movement, (8) International travel controls, and (9) Public info campaigns. Each of these individual indicators is measured in an ordinal scale depending on stringency (e.g. whether a measure is only a recommendation or an obligation) and scope (i.e. whether the measure is general or targeted to a specific group or region). The stringency index aggregates each of these rescaled individual indicators to reach a score between 0 and 100.
+
+Figure 3 shows the relationship between the daily drop in electricity consumption (Fig. 2) and the stringency of the COVID-19 measures as estimated by the coronavirus response tracker [@Oxford2020; @Hale2020]. The dots represent the drop of electricity consumption and the stringency index for each day and country/state during the study period, and the solid black line represents the relationship between both variables. The country codes represent the median value for each of the countries during this period, revealing that the stronger stringency, the higher electricity consumption decline. The non-linear shape of this relationship suggests that moderate measures may have a small impact on electricity consumption and thus economic activity. Whereas this is only a high-level illustration, as more data is generated on both the evolution of the stringency across countries and the evolution of electricity demand, these two measures will reveal the impact of the different COVID-19 measures on electricity consumption and therefore on economic activity.
+
+
+\bcenter
+
+![](./figures/stringency_index.png){ width=80% }
+
+__Figure 3. The stronger the measures stringency, the greater the consumption decline__. Each dot represents the daily electricity consumption change and stringency index for each country. The country codes indicate the median values for each country. The black line represents the relationship between electricity consumption and stringency. See https://jlprol.shinyapps.io/covid/ for an interactive version of this figure and easy data download.
+
+\ecenter
+
+
+# Discussion
+
+We estimate the impact of COVID-19 containment measures on electricity consumption by comparing the counterfactual baseline "business as usual" consumption forecast with actual data. We have identified large differences across countries/states, from cumulative contraction beyond -10% in Great Britain and Italy to no net negative impact in Florida. Whereas Italy, France, Spain, California, Austria and New York  have recovered baseline consumption levels, Great Britain and Germany remain below this level. If this situation persists after all containment measures are lifted, this could reveal either a structural impact on economic activity, or a structural change in the relationship between GDP and electricity consumption. 
+
+There are multiple mechanisms through which this short-term shock could have structural economic effects. From the demand side, the immediate effects of the social distancing measures may disrupt businesses that rely on personal interaction [@Koren2020]. From the supply side, halting non-essential activities may have propagation effects across the supply chain to other regions and sectors [@Inoue2020]. An increase in uncertainty, such as the one caused by this pandemic [@Baker2020] affects both demand by lower consumer spending and supply by lower investment and capital formation. The labour market could also be a transmission mechanism as the crisis affects mostly workers that need a long time to be employable again [@Gregory2020]. Finally, a financial mechanism through which higher private and public indebtedness slows down potential long-term growth could also come into play [@Dar2014; @Cecchetti2011].
+
+If the economic contraction caused by the COVID-19 measures turns out to be L-shaped for some countries, this would contrast with previous epidemics that have generally caused transient V-shaped shocks [@Harvard2020], revealing the unprecedented nature of this crisis and the urgent need for further research to understand the implications of the pandemic and the measures taken by governments to contain its spread. The counterfactual baseline electricity consumption data provided here are publicly available (see below repository link) and can thus help in that direction by providing an estimate of the drop in electricity consumption due to the crisis. Furthermore, our results can contribute to estimating the effects of specific policies [@Oxford2020], to assess the relationship with other real-time indicators, such as mobility [@Google2020, @Apple2020] or electronic payments [@Aprigliano2019], or to nowcast economic activity [@Buono2017].
+
+
+# Methods
+
+## Accuracy and method selection
+
+We have compared forecast business as usual daily electricity consumption with actual consumption data from March to July 2020 to estimate the effect of the COVID-19 measures on electricity consumption. Before deciding to use dynamic harmonic regression to estimate the baseline, we tried four different methods: 
+
+(i) Seasonal and trend decomposition using loess forecasting (STLF) is a univariate method that consists in decomposing the time series into three structural components: a trend capturing the long-term evolution of the time series, a seasonal pattern of constant frequency and a remaining error capturing the randomness of the data. This is a relatively simple model that works well when there is no more information available than the time series and there are clear seasonal and trend patterns in the data, but fails to capture complex dynamics as those present in our long-term daily time series.
+
+(ii) Trigonometric seasonality with Box-Cox transformation, ARMA errors, trend and seasonal components (TBATS). This model is more complex than the previous, as it allows for autoregressive and moving average components (ARMA) to capture short-term dynamics, Box-Cox transformation for variance stabilisation and Fourier terms for complex seasonality, in addition to the seasonal and trend components common to the STLF.
+
+(iii) Neural network autoregression $NNAR(p,P,k)_m$ where $p$ is the order of the time series lags that are included as predictors of the network and $k$ is the number of nodes that form the network. $P$ is the order of the seasonal lags with frequency $m$. We run a feed-forward network with one hidden layer where all the parameters are automatically learned from the data. Seasonality is set to 365 (yearly) and weekly seasonality is modelled with a weekday categorical variable. Two more predictors are included: maximum temperature and a holiday dummy. Neural networks are very flexible and perform well when there are many variables which relationship with the outcome is unknown ex-ante. 
+
+(iv)  $ARIMA(p,d,q)$ dynamic harmonic regression, where $p$ indicates the order of the autoregressive terms, $d$ is the order of integration and $q$ denotes the moving average component, with Fourier terms for complex seasonality. The dynamic regression performs well when the relationship between predictors and outcomes is known. As shown in Supplementary Figure 2, we include maximum temperature in quadratic form as the main driver of electricity demand. We also include a holiday dummy to control for moving calendar effects such as Easter. Complex seasonality (weekly and annual) is captured by Fourier terms of order $(j,k)$ respectively. Fourier terms capture seasonality through $(j,k)$ pairs of sines and cosines. Finally, short-term dynamics are captured by the ARMA components.
+
+To compare the accuracy of these methods, we split the data into training set (years 2015--2018 both included) and test set (2019) and evaluate their accuracy with five different metrics. TBATS perform best for Austria but shows high accuracy differentials across countries, which makes it unsuitable for our purposes. NNAR performs best in countries that have the most irregular consumption patterns but is outperformed by the dynamic harmonic regression in most countries. Finally, dynamic harmonic regression performs best in most countries and shows the lowest spread across accuracy estimates, such that the differences with NNAR accuracy is low when the latter performs better, and the results are comparable across countries (see Supplementary tables 1-9 for detailed accuracy results). Finally, the selected model is trained with all the data until February 2020, and the forecast is predicted from March using actual temperature data. We use maximum daily temperature data as it shows better prediction accuracy than the average. Temperature data is collected from Automated Surface Observing System (ASOS) stations, which are spatially distributed throughout the countries, and take the median of the maximum temperature across all available stations in each country/state.
+
+## ARIMA dynamic harmonic regression
+
+Equation (1) indicates the regression specification
+
+\begin{equation*}
+\begin{aligned}
+y_t =  \alpha + \beta_1 T_t + \beta_2 T^2_t + \beta_3 H_t +  \\
+      \sum_{j=1}^{J} \left( \gamma_{1,j} s_j(t) + \gamma_{2,j} c_j(t) \right) + \\
+          \sum_{k=1}^{K} \left( \gamma_{3,k} s_k(t) + \gamma_{4,k} c_k(t) \right) + \\
+          \sum_{p=1}^{P} \phi y_{t-p} + \sum_{q=1}^{Q} \theta \varepsilon_{t-q} + \epsilon_t \; \; (1)
+\end{aligned}
+\end{equation*}
+
+where Electricity consumption in day t $y_t$ is modelled as a function of a constant $\alpha$, temperature in a quadratic form ($\beta_1 T_t + \beta_2 T^2_t$) and a dummy variable of state-specific holidays $H_t$. Complex seasonality is captured by Fourier terms of the form:
+
+\begin{equation*}
+\begin{aligned}
+          s_j(t) = \sin(\frac{2 \pi j t}{7}) \; \; \; ; \; \; \; c_j(t) = \cos(\frac{2 \pi j t}{7})   \\
+          s_k(t) = \sin(\frac{2 \pi k t}{365.25}) \; \; \; ; \; \; \; c_k(t) = \cos(\frac{2 \pi k t}{365.25})
+\end{aligned}
+\end{equation*}
+
+
+where 7 and  365.25 denote the weekly and annual seasonal levels respectively, and $(j,k)$ represent the number of sine/cosine elements for each seasonal levels. The last two elements of equation (1) represent the $ARMA(p,q)$ structure that captures short-term dynamics, allowing the error term of the model to approach as much as possible a normally distributed white noise. Since all time series are integrated of order one, the model is run in first differences and the constant is thus removed. We tried including economic variables such as GDP and unemployment. Still, since they did not improve prediction accuracy (as they have lower resolution than our daily data), we omitted them from the final specification. Although economic variables are relevant for long-term forecasts, they are usually excluded from short-term estimations [@Jun2011].
+
+The data analysis process can be summarised in the following steps:
+
+1. The time series are transformed following Cox-Box [@Box1964] to stabilise the variance.
+
+2. The time series are tested for stationarity and differenced if necessary.
+
+3. The optimal $ARMA(p,q)$ structure and Fourier$(j,k)$ order is automatically determined by the Hyndman and Khandakar algorithm [@Hyndman2008] to minimise the corrected Akaike information criteria (AICc).
+
+4. Residuals are studied for signs of remaining signals and the ARMA and Fourier parameters are manually fine-tuned to achieve optimal results according to the following criteria: having the simplest possible model with the lowest possible AICc that shows the closest possible residuals to a normally distributed white noise.
+
+5. Forecast the baseline electricity consumption from March to July 2020 and compare it with the actual values. The point forecast is back-transformed, such that it represents the median, rather than the mean of the forecast distribution. All results are provided with 80% and 95% prediction intervals.
+
+Supplementary Table 10 summarises the model parameters of points 1-3 above. Supplementary Tables 11-19 present the regression results and Supplementary Figures 5-13 show the respective residual diagnostics.
+
+## Data
+
+We use three different types of data: (i) Electricity consumption (defined as actual load excluding self-consumption) data acquired from the Energy Information Administration of the USA (https://www.eia.gov/) and ENTSO-E (https://transparency.entsoe.eu/) between January (July for the USA) 2015 and July 2020 both included; (ii) Maximum daily temperature from ASOS provided by Iowa Environmental Mesonet (IEM) (https://mesonet.agron.iastate.edu/ASOS/) and defined as the median of the maximum temperature across all available stations within each country/state (excluding islands); and (iii) Stringency index provided by the Blavatnik School of Government of Oxford University (https://www.bsg.ox.ac.uk/research/research-projects/coronavirus-government-response-tracker). See Supplementary Information for illustrations and further details.
+
+# Data and code availability
+
+Data and code are available on https://github.com/jlprol/covid. The document "replication.Rmd" provides the instructions and basic code for the replication of the main results. See https://jlprol.shinyapps.io/covid/ for interactive figures and easy data download.
+
+
+# Acknowledgement
+
+This research is possible thanks to the funding of the Austrian Science Fund through the Erwin Schrödinger fellowship (grant number J 4301-G27). We would like to thank Wolf-Peter Schill (DIW Berlin) for his support and insightful discussions.
+
+# Author information
+
+Authors declare no competing interests.
+
+Affiliations:
+
+Javier López Prol: Erwin Schrödinger fellow at the German Institute for Economic Research (DIW Berlin), and Wegener Center for Climate and Global Change, University of Graz.
+
+Sungmin O: Max Planck Institute for Biogeochemistry.
+
+
+# Author contribution
+
+JLP conceived the research design, analysed the data and wrote the manuscript. SO collected data and contributed to analysing the data and writing the manuscript.
+
+
+
